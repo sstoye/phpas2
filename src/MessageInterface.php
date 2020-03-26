@@ -35,13 +35,13 @@ interface MessageInterface
      * Message Subject
      * @return string
      */
-    public function getMessageSubject();
+    public function getSubject();
 
     /**
      * @param string $subject
      * @return $this
      */
-    public function setMessageSubject($subject);
+    public function setSubject($subject);
 
     /**
      * @return int
