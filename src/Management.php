@@ -11,7 +11,7 @@ class Management implements LoggerAwareInterface
 {
     const AS2_VERSION = '1.2';
     const EDIINT_FEATURES = 'CEM'; // multiple-attachments,
-    const USER_AGENT = 'PHPAS2';
+    const USER_AGENT = 'CloudAS2';
 
     /**
      * @var LoggerInterface
