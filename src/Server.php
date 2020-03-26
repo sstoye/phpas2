@@ -73,6 +73,11 @@ class Server
             $as2from = $request->getHeaderLine('as2-from');
             $as2to = $request->getHeaderLine('as2-to');
 
+            $subject = '';
+            if($request->hasHeader('subject')) {
+                $subject = $request->getHeaderLine('subject');
+            }
+
             $this->getLogger()->debug(sprintf('Inbound transmission is a AS2 message [%s]', $as2to));
 
             // Get the message sender and receiver AS2 IDs
@@ -105,6 +110,7 @@ class Server
             // Initialize New Message
             $message = $this->storage->initMessage();
             $message->setMessageId($messageId);
+            $message->setSubject($subject);
             $message->setDirection(MessageInterface::DIR_INBOUND);
             $message->setHeaders($payload->getHeaderLines());
             $message->setSender($sender);

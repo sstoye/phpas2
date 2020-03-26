@@ -32,6 +32,18 @@ interface MessageInterface
     public function setMessageId($id);
 
     /**
+     * Message Subject
+     * @return string
+     */
+    public function getMessageSubject();
+
+    /**
+     * @param string $subject
+     * @return $this
+     */
+    public function setMessageSubject($subject);
+
+    /**
      * @return int
      */
     public function getDirection();
