@@ -1,3 +1,7 @@
+### Fork of tiamo/phpas2
+
+This is a fork of tiamo/phpas2 V1.3.4 to support the partner structure as needed in one of my projects. This will stay a fork for now and is not supposed to be merged back. 
+
 PHPAS2 is a php-based implementation of the EDIINT AS2 standard
 ====
 

@@ -1,5 +1,5 @@
 {
-  "name": "tiamo/phpas2",
+  "name": "sstoye/phpas2",
   "description": "PHPAS2 is a php-based implementation of the EDIINT AS2 standard",
   "version": "1.3.4",
   "authors": [
@@ -7,6 +7,11 @@
       "name": "Vladyslav K",
       "role": "Developer",
       "email": "vk.tiamo@gmail.com"
+    },
+    {
+      "name": "Simon Stoye",
+      "role": "Developer",
+      "email": "sstoye@simonstoye.de"
     }
   ],
   "keywords": [
