@@ -462,9 +462,9 @@ class Management implements LoggerAwareInterface
             $this->getLogger()->debug('Outbound MDN has been signed.');
             // $x509 = openssl_x509_read($receiver->getCertificate());
             // $key = openssl_get_privatekey($receiver->getPrivateKey(), $receiver->getPrivateKeyPassPhrase());
-            $report = CryptoHelper::sign($report, $receiver->getCertificate(), [
-                $receiver->getPrivateKey(),
-                $receiver->getPrivateKeyPassPhrase(),
+            $report = CryptoHelper::sign($report, $sender->getCertificate(), [
+                $sender->getPrivateKey(),
+                $sender->getPrivateKeyPassPhrase(),
             ], $mdnHeaders);
         }
 
