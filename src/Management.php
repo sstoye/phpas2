@@ -28,7 +28,8 @@ class Management implements LoggerAwareInterface
      */
     protected $options = [
         /** @see \GuzzleHttp\Client */
-        'client_config' => [],
+        //todo!
+        'client_config' => ['verify' => false],
     ];
 
     /**
@@ -285,8 +286,6 @@ class Management implements LoggerAwareInterface
         if (! $this->httpClient) {
             $this->httpClient = new Client($this->getOption('client_config'));
 
-            //todo change
-            $this->httpClient->setDefaultOption('verify', false);
             //'cert' => '/etc/pki/client_certificate.pem'
 
         }
