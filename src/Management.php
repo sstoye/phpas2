@@ -269,6 +269,11 @@ class Management implements LoggerAwareInterface
 
             return $response;
 
+        } catch (\GuzzleHttp\Exception\ClientException $e) {
+            $this->getLogger()->critical($e->getMessage());
+            $this->getLogger()->critical($e->getResponse()->getBody()->getContents());
+            $message->setStatus(MessageInterface::STATUS_ERROR);
+            $message->setStatusMsg($e->getMessage());
         } catch (\Exception $e) {
             $this->getLogger()->critical($e->getMessage());
             $message->setStatus(MessageInterface::STATUS_ERROR);
