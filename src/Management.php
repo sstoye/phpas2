@@ -409,9 +409,6 @@ class Management implements LoggerAwareInterface
         $messageHeaders = MimePart::fromString($message->getHeaders());
         $isSigned = $messageHeaders->hasHeader('disposition-notification-options');
 
-        // TODO: parse (signed-receipt-protocol, signed-receipt-micalg)
-        // $notificationOptions = Utils::parseHeader($notificationOptions);
-
         // Set up the message headers
         $mdnHeaders = [
             'Message-ID' => '<' . Utils::generateMessageID($receiver) . '>',
@@ -463,13 +460,23 @@ class Management implements LoggerAwareInterface
 
         // If signed MDN is requested by partner then sign the MDN and attach to report
         if ($isSigned) {
-            $this->getLogger()->debug('Outbound MDN has been signed.');
-            // $x509 = openssl_x509_read($receiver->getCertificate());
-            // $key = openssl_get_privatekey($receiver->getPrivateKey(), $receiver->getPrivateKeyPassPhrase());
-            $report = CryptoHelper::sign($report, $receiver->getCertificate(), [
-                $receiver->getPrivateKey(),
-                $receiver->getPrivateKeyPassPhrase(),
-            ], $mdnHeaders);
+            $notificationOptions = $messageHeaders->getHeader('disposition-notification-options');
+            $notificationOptions = Utils::parseHeader($notificationOptions);
+
+            $micAlg = isset($notificationOptions[2]) ? reset($notificationOptions[2]) : null;
+
+            $this->getLogger()->debug('Outbound MDN has been signed. With MIC algorithm: ' . $micAlg ? $micAlg : 'default');
+
+            $report = CryptoHelper::sign(
+                $report,
+                $receiver->getCertificate(),
+                [
+                    $receiver->getPrivateKey(),
+                    $receiver->getPrivateKeyPassPhrase(),
+                ],
+                $mdnHeaders,
+                $micAlg
+            );
         }
 
         $this->getLogger()->debug(sprintf('Outbound MDN created for AS2 message "%s".', $messageId));
