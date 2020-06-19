@@ -411,7 +411,9 @@ class Management implements LoggerAwareInterface
         ];
 
         // Parse Message Headers
-        $messageHeaders = MimePart::fromString($message->getHeaders());
+        //$messageHeaders = MimePart::fromString($message->getHeaders());
+        $messageHeaders = MimePart::fromString(trim($message->getHeaders())."\r\n\r\n");
+
         $isSigned = $messageHeaders->hasHeader('disposition-notification-options');
 
         // Set up the message headers
