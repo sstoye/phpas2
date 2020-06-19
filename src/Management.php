@@ -470,7 +470,7 @@ class Management implements LoggerAwareInterface
 
             $micAlg = isset($notificationOptions[2]) ? reset($notificationOptions[2]) : null;
 
-            $this->getLogger()->debug('Outbound MDN has been signed. With MIC algorithm: ' . $micAlg ? $micAlg : 'default');
+            $this->getLogger()->debug('Outbound MDN has been signed. With MIC algorithm: ' . ($micAlg ? $micAlg : 'default'));
 
             $report = CryptoHelper::sign(
                 $report,
