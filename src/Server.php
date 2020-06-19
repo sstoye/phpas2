@@ -223,7 +223,13 @@ class Server
                 $this->getLogger()->debug('AS2 communication successful, message has been saved.', [$messageId]);
             }
 
-        } catch (\Exception $e) {
+        } catch (\GuzzleHttp\Exception\ClientException $e) {
+            $this->getLogger()->critical($e->getMessage());
+            $this->getLogger()->critical($e->getResponse()->getBody()->getContents());
+            $responseStatus = 500;
+            $responseBody = $e->getMessage();
+        }
+        catch (\Exception $e) {
 
             // $mdn = $this->manager->buildMdn($message, null, $e->getMessage());
 
