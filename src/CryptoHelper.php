@@ -108,35 +108,24 @@ class CryptoHelper
     /**
      * @param  string|MimePart  $data
      * @param  array|null  $caInfo  Information about the trusted CA certificates to use in the verification process
-     * @param  array  $rootCerts
+    
      * @return bool
      */
-    public static function verify($data, $caInfo = null, $rootCerts = [])
+    public static function verify($data, $caInfo = [])
     {
         if ($data instanceof MimePart) {
             $data = self::getTempFilename((string) $data);
         }
-
-        if (! empty($caInfo)) {
-            if (! is_array($caInfo)) {
-                $caInfo = [$caInfo];
-            }
-            foreach ($caInfo as $cert) {
-                $rootCerts[] = self::getTempFilename($cert);
-            }
-        }
-
-        $flags = PKCS7_BINARY | PKCS7_NOSIGS;
-
-        if (empty($rootCerts)) {
-            $flags |= PKCS7_NOVERIFY;
-        }
-
-        // php warning if is null
-        $outFile = self::getTempFilename();
-
-        return openssl_pkcs7_verify($data, $flags, $outFile, $rootCerts) === true;
+        // TODO: refactory
+        // if (! is_array($caInfo)) {
+        //     $caInfo = [
+        //         self::getTempFilename($caInfo),
+        //     ];
+        // }
+        // return openssl_pkcs7_verify($data, PKCS7_BINARY | PKCS7_NOSIGS | PKCS7_NOVERIFY, null, $caInfo);
+        return openssl_pkcs7_verify($data, PKCS7_BINARY | PKCS7_NOSIGS | PKCS7_NOVERIFY);
     }
+    
 
     /**
      * @param  string|MimePart  $data
