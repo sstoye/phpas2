@@ -393,6 +393,17 @@ class Management implements LoggerAwareInterface
      */
     public function buildMdn(MessageInterface $message, $confirmationText = null, $errorMessage = null)
     {
+        // Parse Message Headers
+        //$messageHeaders = MimePart::fromString($message->getHeaders());
+        $messageHeaders = MimePart::fromString(trim($message->getHeaders())."\r\n\r\n");
+
+        // In case no MDN is requested exit from process
+        if (! $messageHeaders->hasHeader('disposition-notification-to')) {
+            $this->getLogger()->debug('MDN not requested by partner, closing request.');
+
+            return null;
+        }
+
         $sender = $message->getSender();
         if (! $sender) {
             throw new \InvalidArgumentException('Unknown Message Sender');
@@ -409,10 +420,7 @@ class Management implements LoggerAwareInterface
         $reportHeaders = [
             'Content-Type' => 'multipart/report; report-type=disposition-notification; boundary="----' . $boundary . '"',
         ];
-
-        // Parse Message Headers
-        //$messageHeaders = MimePart::fromString($message->getHeaders());
-        $messageHeaders = MimePart::fromString(trim($message->getHeaders())."\r\n\r\n");
+   
 
         $isSigned = $messageHeaders->hasHeader('disposition-notification-options');
 
@@ -445,7 +453,7 @@ class Management implements LoggerAwareInterface
         $report->addPart(new MimePart([
             'Content-Type' => 'text/plain',
             'Content-Transfer-Encoding' => '7bit', // TODO: check 8bit
-        ], $confirmationText));
+        ], $confirmationText."\n"));
 
         // Build the MDN message and add to report
         $mdnData = [
@@ -473,6 +481,7 @@ class Management implements LoggerAwareInterface
             $micAlg = isset($notificationOptions[2]) ? reset($notificationOptions[2]) : null;
 
             $this->getLogger()->debug('Outbound MDN has been signed. With MIC algorithm: ' . ($micAlg ? $micAlg : 'default'));
+            $this->getLogger()->debug('Notification Options: ' . var_export($notificationOptions, TRUE));
 
             $report = CryptoHelper::sign(
                 $report,
