@@ -53,6 +53,7 @@ class CryptoHelper
             $data = self::getTempFilename($data->toString());
         }
         $temp = self::getTempFilename();
+
         if (! openssl_pkcs7_sign($data, $temp, $cert, $privateKey, $headers, PKCS7_DETACHED)) {
             throw new \RuntimeException(
                 sprintf('Failed to sign S/Mime message. Error: "%s".', openssl_error_string())
@@ -63,7 +64,7 @@ class CryptoHelper
         // TODO: refactory
         // Some servers don't support "x-pkcs7"
         $contentType = $payload->getHeaderLine('content-type');
-        $contentType = str_replace('x-pkcs7', 'pkcs7', $contentType);
+        //$contentType = str_replace('x-pkcs7', 'pkcs7', $contentType);
         if ($micAlgo) {
             $contentType = preg_replace('/micalg=(.+);/i', 'micalg="' . $micAlgo . '";', $contentType);
         }
