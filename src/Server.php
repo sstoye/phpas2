@@ -100,10 +100,10 @@ class Server
                 }
             }
             // Force encode binary data to base64, because openssl_pkcs7 doesn't work with binary data
-            //if ($encoding != 'base64') {
-            //    $request = $request->withHeader('Content-Transfer-Encoding', 'base64');
-            //    $body = Utils::encodeBase64($body);
-            //}
+            if ($encoding != 'base64') {
+                $request = $request->withHeader('Content-Transfer-Encoding', 'base64');
+                $body = Utils::encodeBase64($body);
+            }
 
             $payload = new MimePart($request->getHeaders(), $body);
 
@@ -153,15 +153,7 @@ class Server
                 );
                 $this->getLogger()->debug('Using certificate to verify inbound AS2 message signature.');
 
-                 // Force encode binary data to base64, because openssl_pkcs7 doesn't work with binary data
-                if ($encoding != 'base64') {
-                    $request = $request->withHeader('Content-Transfer-Encoding', 'base64');
-                    $body = Utils::encodeBase64($body);
-                }
-
-                $payload2 = new MimePart($request->getHeaders(), $body);
-
-                if (! CryptoHelper::verify($payload2, $sender->getCertificate())) {
+                if (! CryptoHelper::verify($payload, $sender->getCertificate())) {
                     throw new \RuntimeException('Signature Verification Failed');
                 }
 
