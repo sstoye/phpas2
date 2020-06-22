@@ -66,9 +66,9 @@ class CryptoHelper
         $payload = MimePart::fromString(file_get_contents($temp), false);
 
         $contentType = $payload->getHeaderLine('content-type');
-        if ($micAlgo) {
-            $contentType = preg_replace('/micalg=(.+);/i', 'micalg="'.$micAlgo.'";', $contentType);
-        }
+        //if ($micAlgo) {
+        //    $contentType = preg_replace('/micalg=(.+);/i', 'micalg="'.$micAlgo.'";', $contentType);
+        //}
 
         /** @var MimePart $payload */
         $payload = $payload->withHeader('Content-Type', $contentType);
