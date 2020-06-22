@@ -100,10 +100,10 @@ class Server
                 }
             }
             // Force encode binary data to base64, because openssl_pkcs7 doesn't work with binary data
-            /*if ($encoding != 'base64') {
+            if ($encoding != 'base64') {
                 $request = $request->withHeader('Content-Transfer-Encoding', 'base64');
                 $body = Utils::encodeBase64($body);
-            }*/
+            }
 
             $payload = new MimePart($request->getHeaders(), $body);
 
