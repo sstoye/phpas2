@@ -1,32 +1,51 @@
 <?php
 
+/** @noinspection PhpUnused */
+/** @noinspection PhpFullyQualifiedNameUsageInspection */
+
 namespace AS2;
 
 class Utils
 {
     /**
-     * @param string $content
+     * @param  string  $content
      * @return string
      */
     public static function canonicalize($content)
     {
-        $content = str_replace("\r\n", "\n", $content);
-        $content = str_replace("\r", "\n", $content);
-        $content = str_replace("\n", "\r\n", $content);
-
-        return $content;
+        return str_replace(["\r\n", "\r", "\n"], ["\n", "\n", "\r\n"], $content);
     }
 
     /**
-     * @param string $mic
+     * @param  string  $mic
      * @return string
      */
     public static function normalizeMic($mic)
     {
-        $mic = explode(',', $mic, 2);
-        $mic[1] = strtolower(str_replace('-', '', $mic[1]));
+        $parts = explode(',', $mic, 2);
+        $parts[1] = strtolower(str_replace('-', '', $parts[1]));
 
-        return implode(',', $mic);
+        return implode(',', $parts);
+    }
+
+    /**
+     * @param  string  $data
+     * @return bool|string
+     */
+    public static function normalizeBase64($data)
+    {
+        /** @noinspection NotOptimalRegularExpressionsInspection */
+        if ((strlen($data) % 4 === 0) && preg_match(
+                '/^(?:[A-Za-z0-9+\/]{4})*(?:[A-Za-z0-9+\/]{2}==|[A-Za-z0-9+\/]{3}=)?$/isU',
+                $data
+            )) {
+            $decoded = base64_decode($data, true);
+            if (base64_encode($decoded) === $data) {
+                return $decoded;
+            }
+        }
+
+        return $data;
     }
 
     /**
@@ -35,7 +54,7 @@ class Utils
      * The array contains the "headers" key containing an associative array of header
      * array values, and a "body" key containing the body of the message.
      *
-     * @param string $message HTTP request or response to parse.
+     * @param  string  $message  HTTP request or response to parse.
      *
      * @return array
      */
@@ -44,6 +63,7 @@ class Utils
         if (! $message) {
             throw new \InvalidArgumentException('Invalid message');
         }
+
         // TODO: refactory (RFC2231)
         $message = preg_replace("/; \r?\n\s/i", '; ', $message);
         // Iterate over each line in the message, accounting for line endings
@@ -75,14 +95,14 @@ class Utils
      * data of the header. When a parameter does not contain a value, but just
      * contains a key, this function will inject a key with a '' string value.
      *
-     * @param string|array $header Header to parse into components.
+     * @param  string|array  $header  Header to parse into components.
      *
      * @return array Returns the parsed header values.
      */
     public static function parseHeader($header)
     {
         static $trimmed = "'\" \t\n\r\0\x0B";
-        $params = $matches = [];
+        $params = [];
         foreach (self::normalizeHeader($header) as $val) {
             $part = [];
             foreach (preg_split('/;(?=([^"]*"[^"]*")*[^"]*$)/', $val) as $kvp) {
@@ -105,7 +125,7 @@ class Utils
      * Converts an array of header values that may contain comma separated
      * headers into an array of headers with no comma separated values.
      *
-     * @param string|array $header Header to normalize.
+     * @param  string|array  $header  Header to normalize.
      *
      * @return array Returns the normalized header field values.
      */
@@ -134,8 +154,8 @@ class Utils
      * Converts an array of header values that may contain comma separated
      * headers into a string representation.
      *
-     * @param string[] $headers
-     * @param string $eol
+     * @param  string[]  $headers
+     * @param  string  $eol
      * @return string
      */
     public static function normalizeHeaders($headers, $eol = "\r\n")
@@ -143,11 +163,11 @@ class Utils
         $result = '';
         foreach ($headers as $name => $values) {
             $values = implode(', ', (array) $values);
-            if ($name == 'Content-Type') {
+            if ($name === 'Content-Type') {
                 // some servers don't support "x-"
-                $values = str_replace('x-pkcs7', 'pkcs7', $values);
+                $values = str_replace('x-pkcs7-', 'pkcs7-', $values);
             }
-            $result .= $name . ': ' . $values . $eol;
+            $result .= $name.': '.$values.$eol;
         }
 
         return $result;
@@ -155,24 +175,25 @@ class Utils
 
     /**
      * Encode a given string in base64 encoding and break lines
-     * according to the maximum linelength.
+     * according to the maximum line length.
      *
-     * @param string $str
-     * @param int $lineLength
-     * @param string $lineEnd
+     * @param  string  $str
+     * @param  int  $lineLength
+     * @param  string  $lineEnd
      * @return string
      */
     public static function encodeBase64($str, $lineLength = 64, $lineEnd = "\r\n")
     {
-        $lineLength = $lineLength - ($lineLength % 4);
+        $lineLength -= ($lineLength % 4);
 
         return rtrim(chunk_split(base64_encode($str), $lineLength, $lineEnd));
     }
 
     /**
      * Generate Unique Message Id
+     * TODO: uuid4
      *
-     * @param mixed $partner
+     * @param  mixed  $partner
      * @return string
      */
     public static function generateMessageID($partner = null)
@@ -182,10 +203,10 @@ class Utils
         }
 
         return date('Y-m-d')
-            . '-' .
+            .'-'.
             uniqid('', true)
-            . '@' .
-            ($partner ? strtolower($partner) . '.' : '')
+            .'@'.
+            ($partner ? strtolower($partner).'.' : '')
             .
             str_replace(' ', '', php_uname('n'));
     }
@@ -193,21 +214,33 @@ class Utils
     /**
      * Generate random string
      *
-     * @param int $length
-     * @param string $charList
+     * @param  int  $length
+     * @param  string  $charList
      * @return string
      */
     public static function random($length = 10, $charList = '0-9a-z')
     {
-        $charList = count_chars(preg_replace_callback('#.-.#', function (array $m) {
-            return implode('', range($m[0][0], $m[0][2]));
-        }, $charList), 3);
+        /** @noinspection CallableParameterUseCaseInTypeContextInspection */
+        $charList = count_chars(
+            preg_replace_callback(
+                '#.-.#',
+                static function (array $m) {
+                    return implode('', range($m[0][0], $m[0][2]));
+                },
+                $charList
+            ),
+            3
+        );
         $chLen = strlen($charList);
+
         if ($length < 1) {
             throw new \InvalidArgumentException('Length must be greater than zero.');
-        } elseif ($chLen < 2) {
+        }
+
+        if ($chLen < 2) {
             throw new \InvalidArgumentException('Character list must contain as least two chars.');
         }
+
         $res = '';
         for ($i = 0; $i < $length; $i++) {
             $res .= $charList[mt_rand(0, $chLen - 1)];
@@ -219,7 +252,7 @@ class Utils
     /**
      * Checks if the string is valid for UTF-8 encoding
      *
-     * @param string $s
+     * @param  string  $s
      * @return bool
      */
     public static function checkEncoding($s)
@@ -230,7 +263,7 @@ class Utils
     /**
      * Removes invalid code unit sequences from UTF-8 string
      *
-     * @param string $s
+     * @param  string  $s
      * @return bool
      */
     public static function fixEncoding($s)

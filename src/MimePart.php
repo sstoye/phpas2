@@ -1,10 +1,14 @@
 <?php
 
+/** @noinspection PhpUnused */
+
 namespace AS2;
 
 use GuzzleHttp\Psr7\MessageTrait;
+use Psr\Http\Message\MessageInterface as PsrMessageInterface;
+use Psr\Http\Message\RequestInterface;
 
-class MimePart implements \Psr\Http\Message\MessageInterface
+class MimePart implements PsrMessageInterface
 {
     use MessageTrait;
 
@@ -30,6 +34,11 @@ class MimePart implements \Psr\Http\Message\MessageInterface
     /**
      * @var string
      */
+    protected $rawMessage;
+
+    /**
+     * @var string
+     */
     protected $body;
 
     /**
@@ -40,13 +49,19 @@ class MimePart implements \Psr\Http\Message\MessageInterface
     /**
      * MimePart constructor.
      *
-     * @param array $headers
-     * @param null $body
+     * @param  array  $headers
+     * @param  string  $body
+     * @param  string  $rawMessage
      */
-    public function __construct($headers = [], $body = null)
+    public function __construct($headers = [], $body = null, $rawMessage = null)
     {
+        if (null !== $rawMessage) {
+            $this->rawMessage = $rawMessage;
+        }
+
         $this->setHeaders((array)$headers);
-        if (!is_null($body)) {
+
+        if (! is_null($body)) {
             $this->setBody($body);
         }
     }
@@ -54,24 +69,38 @@ class MimePart implements \Psr\Http\Message\MessageInterface
     /**
      * Instantiate from Request Object
      *
-     * @param \Psr\Http\Message\RequestInterface $request
+     * @param  PsrMessageInterface  $message
      * @return static
      */
-    public static function fromRequest(\Psr\Http\Message\RequestInterface $request)
+    public static function fromPsrMessage(PsrMessageInterface $message)
     {
-        return new static($request->getHeaders(), $request->getBody()->getContents());
+        return new static($message->getHeaders(), $message->getBody()->getContents());
+    }
+
+    /**
+     * Instantiate from Request Object
+     *
+     * @param  RequestInterface  $request
+     * @return static
+     * @deprecated Please use MimePart::fromPsrMessage
+     */
+    public static function fromRequest(RequestInterface $request)
+    {
+        return self::fromPsrMessage($request);
     }
 
     /**
      * Instantiate from raw message string
      *
-     * @param  string $rawMessage
+     * @param  string  $rawMessage
+     * @param  bool  $saveRaw
      * @return static
      */
-    public static function fromString($rawMessage)
+    public static function fromString($rawMessage, $saveRaw = true)
     {
         $payload = Utils::parseMessage($rawMessage);
-        return new static($payload['headers'], $payload['body']);
+
+        return new static($payload['headers'], $payload['body'], $saveRaw ? $rawMessage : null);
     }
 
     /**
@@ -80,7 +109,9 @@ class MimePart implements \Psr\Http\Message\MessageInterface
     public function isPkc7Mime()
     {
         $type = $this->getParsedHeader('content-type', 0, 0);
-        return $type == self::TYPE_PKCS7_MIME || $type == self::TYPE_X_PKCS7_MIME;
+        $type = strtolower($type);
+
+        return $type === self::TYPE_PKCS7_MIME || $type === self::TYPE_X_PKCS7_MIME;
     }
 
     /**
@@ -89,7 +120,9 @@ class MimePart implements \Psr\Http\Message\MessageInterface
     public function isPkc7Signature()
     {
         $type = $this->getParsedHeader('content-type', 0, 0);
-        return $type == self::TYPE_PKCS7_SIGNATURE || $type == self::TYPE_X_PKCS7_SIGNATURE;
+        $type = strtolower($type);
+
+        return $type === self::TYPE_PKCS7_SIGNATURE || $type === self::TYPE_X_PKCS7_SIGNATURE;
     }
 
     /**
@@ -97,7 +130,7 @@ class MimePart implements \Psr\Http\Message\MessageInterface
      */
     public function isEncrypted()
     {
-        return $this->getParsedHeader('content-type', 0, 'smime-type') == self::SMIME_TYPE_ENCRYPTED;
+        return $this->getParsedHeader('content-type', 0, 'smime-type') === self::SMIME_TYPE_ENCRYPTED;
     }
 
     /**
@@ -105,7 +138,7 @@ class MimePart implements \Psr\Http\Message\MessageInterface
      */
     public function isCompressed()
     {
-        return $this->getParsedHeader('content-type', 0, 'smime-type') == self::SMIME_TYPE_COMPRESSED;
+        return $this->getParsedHeader('content-type', 0, 'smime-type') === self::SMIME_TYPE_COMPRESSED;
     }
 
     /**
@@ -113,7 +146,7 @@ class MimePart implements \Psr\Http\Message\MessageInterface
      */
     public function isSigned()
     {
-        return $this->getParsedHeader('content-type', 0, 0) == self::MULTIPART_SIGNED;
+        return $this->getParsedHeader('content-type', 0, 0) === self::MULTIPART_SIGNED;
     }
 
     /**
@@ -121,7 +154,21 @@ class MimePart implements \Psr\Http\Message\MessageInterface
      */
     public function isReport()
     {
-        return $this->getParsedHeader('content-type', 0, 0) == self::MULTIPART_REPORT;
+        $isReport = $this->getParsedHeader('content-type', 0, 0) === self::MULTIPART_REPORT;
+
+        if ($isReport) {
+            return true;
+        }
+
+        if ($this->isSigned()) {
+            foreach ($this->getParts() as $part) {
+                if ($part->isReport()) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 
     /**
@@ -129,7 +176,7 @@ class MimePart implements \Psr\Http\Message\MessageInterface
      */
     public function isBinary()
     {
-        return $this->getParsedHeader('content-transfer-encoding', 0, 0) == 'binary';
+        return $this->getParsedHeader('content-transfer-encoding', 0, 0) === 'binary';
     }
 
     /**
@@ -166,7 +213,7 @@ class MimePart implements \Psr\Http\Message\MessageInterface
     }
 
     /**
-     * @param mixed $part
+     * @param  mixed  $part
      * @return $this
      */
     public function addPart($part)
@@ -176,19 +223,22 @@ class MimePart implements \Psr\Http\Message\MessageInterface
         } else {
             $this->parts[] = self::fromString((string)$part);
         }
+
         return $this;
     }
 
     /**
-     * @param int $num
+     * @param  int  $num
      * @return bool
      */
     public function removePart($num)
     {
         if (isset($this->parts[$num])) {
             unset($this->parts[$num]);
+
             return true;
         }
+
         return false;
     }
 
@@ -201,13 +251,14 @@ class MimePart implements \Psr\Http\Message\MessageInterface
     }
 
     /**
-     * @param string $header
-     * @param int $index
-     * @param string|int $param
+     * @param  string  $header
+     * @param  int  $index
+     * @param  string|int  $param
      * @return array|string|null
      */
     public function getParsedHeader($header, $index = null, $param = null)
     {
+        /** @noinspection CallableParameterUseCaseInTypeContextInspection */
         $header = Utils::parseHeader($this->getHeader($header));
         if ($index === null) {
             return $header;
@@ -216,6 +267,7 @@ class MimePart implements \Psr\Http\Message\MessageInterface
         if ($param !== null) {
             return isset($params[$param]) ? $params[$param] : null;
         }
+
         return $params;
     }
 
@@ -230,20 +282,21 @@ class MimePart implements \Psr\Http\Message\MessageInterface
         if (count($this->parts) > 0) {
             $boundary = $this->getParsedHeader('content-type', 0, 'boundary');
             if ($boundary) {
-//                $body .= self::EOL;
+                //                $body .= self::EOL;
                 foreach ($this->getParts() as $part) {
-//                    $body .= self::EOL;
-                    $body .= '--' . $boundary . self::EOL;
-                    $body .= $part->toString() . self::EOL;
+                    //                    $body .= self::EOL;
+                    $body .= '--'.$boundary.self::EOL;
+                    $body .= $part->toString().self::EOL;
                 }
-                $body .= '--' . $boundary . '--' . self::EOL;
+                $body .= '--'.$boundary.'--'.self::EOL;
             }
         }
+
         return $body;
     }
 
     /**
-     * @param string|static $body
+     * @param  static|array|string  $body
      * @return $this
      */
     public function setBody($body)
@@ -257,10 +310,10 @@ class MimePart implements \Psr\Http\Message\MessageInterface
         } else {
             $boundary = $this->getParsedHeader('content-type', 0, 'boundary');
             if ($boundary) {
-                $separator = '--' . preg_quote($boundary, '/');
+                $separator = '--'.preg_quote($boundary, '/');
                 // Get multi-part content
-                if (preg_match('/' . $separator . '\r?\n(.+?)\r?\n' . $separator . '--/s', $body, $matches)) {
-                    $parts = preg_split('/\r?\n' . $separator . '\r?\n/', $matches[1]);
+                if (preg_match('/'.$separator.'\r?\n(.+?)\r?\n'.$separator.'--/s', $body, $matches)) {
+                    $parts = preg_split('/\r?\n'.$separator.'\r?\n/', $matches[1]);
                     foreach ($parts as $part) {
                         $this->addPart($part);
                     }
@@ -269,6 +322,17 @@ class MimePart implements \Psr\Http\Message\MessageInterface
                 $this->body = $body;
             }
         }
+
+        return $this;
+    }
+
+    /**
+     * @return $this|self
+     */
+    public function withoutRaw()
+    {
+        $this->rawMessage = null;
+
         return $this;
     }
 
@@ -279,7 +343,11 @@ class MimePart implements \Psr\Http\Message\MessageInterface
      */
     public function toString()
     {
-        return $this->getHeaderLines() . self::EOL . $this->getBody();
+        if ($this->rawMessage) {
+            return $this->rawMessage;
+        }
+
+        return $this->getHeaderLines().self::EOL.$this->getBody();
     }
 
     /**
