@@ -65,14 +65,14 @@ class CryptoHelper
         }
         $payload = MimePart::fromString(file_get_contents($temp), false);
 
-        $contentType = $payload->getHeaderLine('content-type');
-        //if ($micAlgo) {
-        //    $contentType = preg_replace('/micalg=(.+);/i', 'micalg="'.$micAlgo.'";', $contentType);
-        //}
+        if ($micAlgo) {
+            $contentType = $payload->getHeaderLine('content-type');
+            $contentType = preg_replace('/micalg=(.+);/i', 'micalg="' . $micAlgo . '";', $contentType);
+            /** @var MimePart $payload */
+            $payload = $payload->withHeader('Content-Type', $contentType);
+        }
 
-        /** @var MimePart $payload */
-        $payload = $payload->withHeader('Content-Type', $contentType);
-
+        // replace x-pkcs7-signature > pkcs7-signature
         foreach ($payload->getParts() as $key => $part) {
             if ($part->isPkc7Signature()) {
                 $payload->removePart($key);
