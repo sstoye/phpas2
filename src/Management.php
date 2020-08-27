@@ -379,7 +379,7 @@ class Management implements LoggerAwareInterface
             /** @noinspection PhpUnhandledExceptionInspection */
             $response = $this->getHttpClient()->request('POST', $partner->getTargetUrl(), $options);
             if ($response->getStatusCode() !== 200) {
-                throw new \RuntimeException('Message send failed with error');
+                throw new \RuntimeException('Message send failed with error. Status :' . $response->getStatusCode() . ' - ' . $response->getBody()->getContents());
             }
 
             $this->getLogger()->debug('AS2 message successfully sent to partner');

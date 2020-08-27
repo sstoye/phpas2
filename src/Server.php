@@ -56,7 +56,8 @@ class Server
         $responseBody = null;
 
         try {
-
+            $this->getLogger()->debug(sprintf('Received an HTTP POST from `%s`.', $_SERVER['REMOTE_ADDR']));
+            
             if ($request->getMethod() !== 'POST') {
                 throw new \RuntimeException('To submit an AS2 message, you must POST the message to this URL.');
             }
