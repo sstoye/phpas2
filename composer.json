@@ -22,15 +22,15 @@
   ],
   "license": "MIT",
   "require": {
-    "php": ">=5.5",
+    "php": ">=7",
     "ext-zlib": "*",
     "ext-openssl": "*",
     "psr/log": "^1.0",
-    "guzzlehttp/guzzle": "^6.3",
-    "phpseclib/phpseclib": "^2.0.27"
+    "guzzlehttp/guzzle": "^7.0",
+    "phpseclib/phpseclib": "^3.0.0"
   },
   "require-dev": {
-    "phpunit/phpunit": "~5.0"
+    "phpunit/phpunit": "~9.0"
   },
   "autoload": {
     "psr-4": {
