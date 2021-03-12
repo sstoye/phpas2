@@ -200,4 +200,16 @@ interface MessageInterface
      * @return $this
      */
     public function setCompressed($val = true);
+
+    /**
+     * @return subject
+     */
+    public function getSubject();
+
+    /**
+     * @param string $subject
+     *
+     * @return $this
+     */
+    public function setSubject($subject);    
 }

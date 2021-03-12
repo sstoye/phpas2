@@ -85,6 +85,10 @@ class Server
             $messageId  = trim($request->getHeaderLine('message-id'), '<>');
             $senderId   = $request->getHeaderLine('as2-from');
             $receiverId = $request->getHeaderLine('as2-to');
+            $subject = '';
+            if($request->hasHeader('subject')) {
+                $subject = $request->getHeaderLine('subject');
+            }
 
             $this->getLogger()->debug(sprintf('Check payload to see if its an AS2 Message or ASYNC MDN.'));
 
@@ -140,6 +144,7 @@ class Server
                 $message->setStatus(MessageInterface::STATUS_IN_PROCESS);
                 $message->setSender($sender);
                 $message->setReceiver($receiver);
+                $message->setSubject($subject);
                 $message->setHeaders($payload->getHeaderLines());
 
                 try {
