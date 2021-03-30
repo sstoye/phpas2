@@ -289,11 +289,17 @@ class Management implements LoggerAwareInterface
             $cert = $message->getSender()->getCertificate();
 
             if (empty($cert)) {
+                $this->getLogger()->debug('Partner has no signature verification key defined.');
+
                 throw new \RuntimeException('Partner has no signature verification key defined');
             }
 
+            $this->getLogger()->debug('Verify using stored certificate.');
+
             // Verify message using raw payload received from partner
             if (!CryptoHelper::verify($payload, $cert)) {
+                $this->getLogger()->debug('Signature Verification Failed');
+
                 throw new \RuntimeException('Signature Verification Failed');
             }
 
