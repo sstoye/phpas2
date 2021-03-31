@@ -280,28 +280,34 @@ class Management implements LoggerAwareInterface
 
         // Check if message is signed and if so verify it
         if ($payload->isSigned()) {
-            $this->getLogger()->debug('Message is signed, Verifying it using public key.');
+            
+            if($message->getSender()->getCheckSignature()) {
+                $this->getLogger()->debug('Message is signed. Verifying it using public key.');
 
-            $message->setSigned();
+                $message->setSigned();
 
-            // Get the partners public and ca certificates
-            // TODO: refactory
-            $cert = $message->getSender()->getCertificate();
+                // Get the partners public and ca certificates
+                // TODO: refactory
+                $cert = $message->getSender()->getCertificate();
 
-            if (empty($cert)) {
-                $this->getLogger()->debug('Partner has no signature verification key defined.');
+                if (empty($cert)) {
+                    $this->getLogger()->debug('Partner has no signature verification key defined.');
 
-                throw new \RuntimeException('Partner has no signature verification key defined');
+                    throw new \RuntimeException('Partner has no signature verification key defined');
+                }
+
+                $this->getLogger()->debug('Verify using stored certificate.');
+
+                // Verify message using raw payload received from partner
+                if (!CryptoHelper::verify($payload, $cert)) {
+                    $this->getLogger()->debug('Signature Verification Failed');
+
+                    throw new \RuntimeException('Signature Verification Failed');
+                }
+            } else {
+                $this->getLogger()->debug('Message is signed. Ignore signature due to partner settings.');
             }
-
-            $this->getLogger()->debug('Verify using stored certificate.');
-
-            // Verify message using raw payload received from partner
-            if (!CryptoHelper::verify($payload, $cert)) {
-                $this->getLogger()->debug('Signature Verification Failed');
-
-                throw new \RuntimeException('Signature Verification Failed');
-            }
+           
 
             $this->getLogger()->debug('Digital signature of inbound AS2 message has been verified successful.');
             $this->getLogger()->debug(
