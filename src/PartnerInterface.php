@@ -98,9 +98,4 @@ interface PartnerInterface
      * @return string (Example: Your requested MDN response from $receiver.as2_id$)
      */
     public function getMdnSubject();
-
-    /**
-     * @return boolean Whether to check the signature
-     */
-    public function getCheckSignature();
 }
