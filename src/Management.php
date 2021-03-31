@@ -281,10 +281,12 @@ class Management implements LoggerAwareInterface
         // Check if message is signed and if so verify it
         if ($payload->isSigned()) {
             $checkSignature = true;
-
-            if($message->getSender() instanceof AdvancedPartnerInterface)
-                $checkSignature = $message->getSender()->getCheckSignature();
-
+            
+            $sender = $message->getSender();
+            if($sender instanceof AdvancedPartnerInterface) {
+                $checkSignature = $sender->getCheckSignature();
+            }
+            
             if($checkSignature) {
                 $this->getLogger()->debug('Message is signed. Verifying it using public key.');
 
