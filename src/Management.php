@@ -287,7 +287,7 @@ class Management implements LoggerAwareInterface
             $checkSignature = $sender->getCheckSignature();
             $requireSigned = $sender->getRequireSignedMessages();
 
-            if($requireSigned && $payload->isSigned()) {
+            if($requireSigned && !$payload->isSigned()) {
                 throw new \RuntimeException('No signature found. Only accepting signed messages.');
             }
             
