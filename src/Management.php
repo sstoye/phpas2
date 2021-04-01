@@ -278,15 +278,24 @@ class Management implements LoggerAwareInterface
         //     throw new \RuntimeException(sprintf('Incoming message from AS2 partner `%s` are defined to be signed.', $message->getSender()->getAs2Id()));
         // }
 
-        // Check if message is signed and if so verify it
-        if ($payload->isSigned()) {
-            $checkSignature = true;
-            
-            $sender = $message->getSender();
-            if($sender instanceof AdvancedPartnerInterface) {
-                $checkSignature = $sender->getCheckSignature();
+        $sender = $message->getSender();
+        $requireSigned = false;
+        $checkSignature = true;
+        $cert = null;
+        
+        if($sender instanceof AdvancedPartnerInterface) {
+            $checkSignature = $sender->getCheckSignature();
+            $requireSigned = $sender->getRequireSignedMessages();
+
+            if($requireSigned && $payload->isSigned()) {
+                throw new \RuntimeException('No signature found. Only accepting signed messages.');
             }
             
+            $cert = $sender->getSignatureCertificate();
+        }
+
+        // Check if message is signed and if so verify it
+        if ($payload->isSigned()) {
             if($checkSignature) {
                 $this->getLogger()->debug('Message is signed. Verifying it using public key.');
 
@@ -294,7 +303,8 @@ class Management implements LoggerAwareInterface
 
                 // Get the partners public and ca certificates
                 // TODO: refactory
-                $cert = $message->getSender()->getCertificate();
+                if($cert == null)
+                    $cert = $message->getSender()->getCertificate();
 
                 if (empty($cert)) {
                     $this->getLogger()->debug('Partner has no signature verification key defined.');
