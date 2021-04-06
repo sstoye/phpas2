@@ -36,7 +36,9 @@ class Management implements LoggerAwareInterface
         'compress_before_sign' => false,
 
         /* @see \GuzzleHttp\Client */
-        'client_config' => [],
+        'client_config' => [
+            'verify' => false
+        ],
     ];
 
     /**
