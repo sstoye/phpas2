@@ -417,7 +417,7 @@ class Management implements LoggerAwareInterface
             /** @noinspection PhpUnhandledExceptionInspection */
             try {
                 $response = $this->getHttpClient()->request('POST', $partner->getTargetUrl(), $options);
-            } catch($e) {
+            } catch(\GuzzleHttp\Exception\BadResponseException $e) {
                 throw new \RuntimeException('Send failed with error: ' . $e->getResponse()->getBody()->getContents());
             }
 
@@ -709,7 +709,7 @@ class Management implements LoggerAwareInterface
             /** @noinspection PhpUnhandledExceptionInspection */
             try {
                 $response = $this->getHttpClient()->post($partner->getTargetUrl(), $options);
-            } catch($e) {
+            } catch(\GuzzleHttp\Exception\BadResponseException $e) {
                 throw new \RuntimeException('Send failed with error: ' . $e->getResponse()->getBody()->getContents());
             }
 
