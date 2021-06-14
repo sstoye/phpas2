@@ -208,6 +208,17 @@ class Management implements LoggerAwareInterface
             $as2headers[$name] = implode(', ', $values);
         }
 
+        if($receiver instanceof AdvancedPartnerInterface) {
+            if($receiver->getBinaryContentTransferEncoding()) {
+                if($as2headers['Content-Transfer-Encoding'] == 'base64') {
+                    $as2headers['Content-Transfer-Encoding'] = 'binary';
+                    $newBody = base64_decode($payload->getBody());
+                    
+                    $payload = new MimePart($newHeaders, $newBody);
+                }
+            }
+        
+        }
         $as2Message = new MimePart($as2headers, $payload->getBody());
 
         $message->setHeaders($as2Message->getHeaderLines());
@@ -404,7 +415,12 @@ class Management implements LoggerAwareInterface
             }
 
             /** @noinspection PhpUnhandledExceptionInspection */
-            $response = $this->getHttpClient()->request('POST', $partner->getTargetUrl(), $options);
+            try {
+                $response = $this->getHttpClient()->request('POST', $partner->getTargetUrl(), $options);
+            } catch($e) {
+                throw new \RuntimeException('Send failed with error: ' . $e->getResponse()->getBody()->getContents());
+            }
+
             if ($response->getStatusCode() !== 200) {
                 throw new \RuntimeException('Message send failed with error');
             }
@@ -691,7 +707,12 @@ class Management implements LoggerAwareInterface
             }
 
             /** @noinspection PhpUnhandledExceptionInspection */
-            $response = $this->getHttpClient()->post($partner->getTargetUrl(), $options);
+            try {
+                $response = $this->getHttpClient()->post($partner->getTargetUrl(), $options);
+            } catch($e) {
+                throw new \RuntimeException('Send failed with error: ' . $e->getResponse()->getBody()->getContents());
+            }
+
             if ($response->getStatusCode() !== 200) {
                 throw new \RuntimeException('Message send failed with error');
             }

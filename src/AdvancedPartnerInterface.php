@@ -19,4 +19,9 @@ interface AdvancedPartnerInterface
      */
     public function getRequireSignedMessages();
 
+    /**
+     * @return bool
+     */
+    public function getBinaryContentTransferEncoding();
+
 }
