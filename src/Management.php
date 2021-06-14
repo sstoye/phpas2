@@ -214,7 +214,7 @@ class Management implements LoggerAwareInterface
                     $as2headers['Content-Transfer-Encoding'] = 'binary';
                     $newBody = base64_decode($payload->getBody());
                     
-                    $payload = new MimePart($newHeaders, $newBody);
+                    $payload = new MimePart($as2headers, $newBody);
                 }
             }
         
